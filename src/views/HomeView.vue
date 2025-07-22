@@ -224,17 +224,12 @@
               <div class="stat-item">
                 MR合并: <span class="stat-value">{{ reportData.commits }}</span>
               </div>
-              <div class="stat-item">
-                本周工作: <span class="stat-value">{{ validOutputs.length }}</span>
-              </div>
-              <div class="stat-item">
-                个人收获: <span class="stat-value">{{ validAchievements.length }}</span>
-              </div>
             </div>
 
             <div class="report-section">
               <h2 class="report-section-title">
                 <span style="color: var(--primary-light); font-size: 18px">01</span> 本周工作
+                <span class="section-count">({{ validOutputs.length }})</span>
               </h2>
               <div v-for="output in validOutputs" :key="output.id" class="output-card">
                 <h3 class="card-title">{{ output.title || '未命名工作' }}</h3>
@@ -262,6 +257,7 @@
             <div class="report-section">
               <h2 class="report-section-title">
                 <span style="color: var(--primary-light); font-size: 18px">02</span> 个人收获
+                <span class="section-count">({{ validAchievements.length }})</span>
               </h2>
               <div
                 style="
@@ -841,6 +837,13 @@ const clearAllData = (): void => {
   color: var(--primary-dark);
   margin-bottom: 20px;
   font-weight: 300;
+}
+
+.section-count {
+  font-size: 18px;
+  color: var(--primary-light);
+  font-weight: 400;
+  margin-left: 8px;
 }
 
 .output-card,
