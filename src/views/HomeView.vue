@@ -71,6 +71,62 @@
             </div>
           </div>
 
+          <!-- 折叠配置 -->
+          <div class="form-section">
+            <h2 class="section-header">内容折叠配置</h2>
+            <div class="collapsible-config">
+              <div class="config-description">
+                <p class="config-hint">
+                  启用折叠功能后，对应章节在预览和导出的报告中将显示展开/收起按钮
+                </p>
+              </div>
+
+              <div class="config-controls">
+                <div class="config-item">
+                  <label class="config-label">
+                    <input
+                      type="checkbox"
+                      v-model="reportData.collapsible.outputs"
+                      class="config-checkbox"
+                    />
+                    <span class="config-text">📋 本周工作可折叠</span>
+                  </label>
+                </div>
+
+                <div class="config-item">
+                  <label class="config-label">
+                    <input
+                      type="checkbox"
+                      v-model="reportData.collapsible.achievements"
+                      class="config-checkbox"
+                    />
+                    <span class="config-text">💡 个人收获可折叠</span>
+                  </label>
+                </div>
+
+                <div class="config-item">
+                  <label class="config-label">
+                    <input
+                      type="checkbox"
+                      v-model="reportData.collapsible.plans"
+                      class="config-checkbox"
+                    />
+                    <span class="config-text">🎯 下周计划可折叠</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="config-actions">
+                <button type="button" class="btn-config" @click="setAllCollapsible(true)">
+                  全部启用折叠
+                </button>
+                <button type="button" class="btn-config" @click="setAllCollapsible(false)">
+                  全部禁用折叠
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- 本周工作 -->
           <div class="form-section">
             <h2 class="section-header">本周工作</h2>
@@ -236,69 +292,117 @@
             </div>
 
             <div class="report-section">
-              <h2 class="report-section-title">
+              <h2
+                class="report-section-title"
+                :class="{ 'collapsible-title': reportData.collapsible.outputs }"
+              >
                 <span style="color: var(--primary-light); font-size: 18px">01</span> 本周工作
                 <span class="section-count">({{ validOutputs.length }})</span>
-              </h2>
-              <div v-for="output in validOutputs" :key="output.id" class="output-card">
-                <h3 class="card-title">{{ output.title || '未命名工作' }}</h3>
-                <div class="card-content">
-                  <ul
-                    v-if="
-                      output.content &&
-                      output.content.split('\n').filter((line) => line.trim()).length > 1
-                    "
-                    style="margin: 0; padding-left: 20px"
-                  >
-                    <li
-                      v-for="(line, i) in output.content.split('\n').filter((l) => l.trim())"
-                      :key="i"
-                      style="margin-bottom: 5px"
-                    >
-                      {{ line }}
-                    </li>
-                  </ul>
-                  <p v-else>{{ output.content || '暂无描述' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="report-section">
-              <h2 class="report-section-title">
-                <span style="color: var(--primary-light); font-size: 18px">02</span> 个人收获
-                <span class="section-count">({{ validAchievements.length }})</span>
+                <button
+                  v-if="reportData.collapsible.outputs"
+                  class="collapse-btn"
+                  @click="toggleSection('outputs')"
+                  :class="{ collapsed: collapsedSections.outputs }"
+                >
+                  ▼
+                </button>
               </h2>
               <div
-                style="
-                  display: grid;
-                  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                  gap: 15px;
-                "
+                v-show="!reportData.collapsible.outputs || !collapsedSections.outputs"
+                class="section-content"
               >
-                <div
-                  v-for="(achievement, index) in validAchievements"
-                  :key="achievement.id"
-                  class="achievement-card"
-                >
-                  <h3 class="card-title">
-                    {{ ['💡', '🤝', '📊', '🎯'][index % 4] }}
-                    {{ achievement.title || '未命名个人收获' }}
-                  </h3>
-                  <div class="card-content">{{ achievement.content || '暂无描述' }}</div>
+                <div v-for="output in validOutputs" :key="output.id" class="output-card">
+                  <h3 class="card-title">{{ output.title || '未命名工作' }}</h3>
+                  <div class="card-content">
+                    <ul
+                      v-if="
+                        output.content &&
+                        output.content.split('\n').filter((line) => line.trim()).length > 1
+                      "
+                      style="margin: 0; padding-left: 20px"
+                    >
+                      <li
+                        v-for="(line, i) in output.content.split('\n').filter((l) => l.trim())"
+                        :key="i"
+                        style="margin-bottom: 5px"
+                      >
+                        {{ line }}
+                      </li>
+                    </ul>
+                    <p v-else>{{ output.content || '暂无描述' }}</p>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="report-section">
-              <h2 class="report-section-title">
-                <span style="color: var(--primary-light); font-size: 18px">03</span> 下周计划
+              <h2
+                class="report-section-title"
+                :class="{ 'collapsible-title': reportData.collapsible.achievements }"
+              >
+                <span style="color: var(--primary-light); font-size: 18px">02</span> 个人收获
+                <span class="section-count">({{ validAchievements.length }})</span>
+                <button
+                  v-if="reportData.collapsible.achievements"
+                  class="collapse-btn"
+                  @click="toggleSection('achievements')"
+                  :class="{ collapsed: collapsedSections.achievements }"
+                >
+                  ▼
+                </button>
               </h2>
-              <div v-for="plan in validPlans" :key="plan.id" class="plan-card">
-                <div style="font-size: 13px; color: var(--primary-light); margin-bottom: 5px">
-                  {{ plan.time || '待定' }}
+              <div
+                v-show="!reportData.collapsible.achievements || !collapsedSections.achievements"
+                class="section-content"
+              >
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 15px;
+                  "
+                >
+                  <div
+                    v-for="(achievement, index) in validAchievements"
+                    :key="achievement.id"
+                    class="achievement-card"
+                  >
+                    <h3 class="card-title">
+                      {{ ['💡', '🤝', '📊', '🎯'][index % 4] }}
+                      {{ achievement.title || '未命名个人收获' }}
+                    </h3>
+                    <div class="card-content">{{ achievement.content || '暂无描述' }}</div>
+                  </div>
                 </div>
-                <h3 class="card-title">{{ plan.title || '未命名计划' }}</h3>
-                <div class="card-content">{{ plan.content || '暂无描述' }}</div>
+              </div>
+            </div>
+
+            <div class="report-section">
+              <h2
+                class="report-section-title"
+                :class="{ 'collapsible-title': reportData.collapsible.plans }"
+              >
+                <span style="color: var(--primary-light); font-size: 18px">03</span> 下周计划
+                <button
+                  v-if="reportData.collapsible.plans"
+                  class="collapse-btn"
+                  @click="toggleSection('plans')"
+                  :class="{ collapsed: collapsedSections.plans }"
+                >
+                  ▼
+                </button>
+              </h2>
+              <div
+                v-show="!reportData.collapsible.plans || !collapsedSections.plans"
+                class="section-content"
+              >
+                <div v-for="plan in validPlans" :key="plan.id" class="plan-card">
+                  <div style="font-size: 13px; color: var(--primary-light); margin-bottom: 5px">
+                    {{ plan.time || '待定' }}
+                  </div>
+                  <h3 class="card-title">{{ plan.title || '未命名计划' }}</h3>
+                  <div class="card-content">{{ plan.content || '暂无描述' }}</div>
+                </div>
               </div>
             </div>
 
@@ -327,6 +431,12 @@ interface PlanItem extends ReportItem {
   time: string
 }
 
+interface CollapsibleConfig {
+  outputs: boolean
+  achievements: boolean
+  plans: boolean
+}
+
 interface ReportData {
   reportTitle: string
   name: string
@@ -338,6 +448,7 @@ interface ReportData {
   outputs: ReportItem[]
   achievements: ReportItem[]
   plans: PlanItem[]
+  collapsible: CollapsibleConfig
 }
 
 // 本地存储相关常量和函数
@@ -360,7 +471,18 @@ const loadFromLocalStorage = (): ReportData | null => {
       const parsed = JSON.parse(stored)
       // 验证数据结构的完整性
       if (parsed && typeof parsed === 'object') {
-        return parsed as ReportData
+        // 确保所有必需的属性都存在，特别是新添加的 collapsible 属性
+        const defaultData = getDefaultReportData()
+        const mergedData = {
+          ...defaultData,
+          ...parsed,
+          // 确保 collapsible 属性存在且完整
+          collapsible: {
+            ...defaultData.collapsible,
+            ...(parsed.collapsible || {}),
+          },
+        }
+        return mergedData as ReportData
       }
     }
   } catch (error) {
@@ -393,6 +515,11 @@ const getDefaultReportData = (): ReportData => ({
   outputs: [],
   achievements: [],
   plans: [],
+  collapsible: {
+    outputs: false,
+    achievements: false,
+    plans: false,
+  },
 })
 
 // 响应式状态，用于存储所有表单数据
@@ -458,6 +585,24 @@ const removeItem = (type: ItemType, index: number): void => {
   reportData.value[type].splice(index, 1)
 }
 
+// 折叠配置管理
+const setAllCollapsible = (enabled: boolean): void => {
+  reportData.value.collapsible.outputs = enabled
+  reportData.value.collapsible.achievements = enabled
+  reportData.value.collapsible.plans = enabled
+}
+
+// 折叠状态管理（用于预览面板）
+const collapsedSections = ref<CollapsibleConfig>({
+  outputs: false,
+  achievements: false,
+  plans: false,
+})
+
+const toggleSection = (type: ItemType): void => {
+  collapsedSections.value[type] = !collapsedSections.value[type]
+}
+
 // 计算属性，用于格式化日期范围
 const formattedDateRange = computed((): string => {
   const { startDate, endDate } = reportData.value
@@ -497,217 +642,157 @@ const isFormStarted = computed((): boolean => {
 const exportReport = (): void => {
   if (!previewContentRef.value) return
 
-  const reportHTML: string = previewContentRef.value.innerHTML
+  const data = reportData.value
+  const outputs = validOutputs.value
+  const achievements = validAchievements.value
+  const plans = validPlans.value
 
-  // 为导出文档定制的CSS样式
-  const exportStyles: string = `
-    /* 重置和基础样式 */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+  // 基础样式变量
+  const colors = {
+    primaryDark: '#383e4e',
+    primaryLight: '#b6bac5',
+    bgLight: '#f8f9fa',
+    textSecondary: '#6c7380',
+    borderColor: '#e5e7eb',
+  }
 
-    html, body {
-      height: auto !important;
-      overflow: visible !important;
-      background: #f8f9fa;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-      line-height: 1.6;
-      color: #383e4e;
-    }
+  // 生成完整的内联样式HTML
+  const reportHTML = `
+    <div style="max-width: 800px; margin: 0 auto; background: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border-radius: 8px; overflow: visible;">
+      <!-- 报告头部 -->
+      <div style="background: ${colors.primaryDark}; color: white; padding: 40px; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+        <h1 style="font-size: 32px; font-weight: 300; margin-bottom: 10px; margin-top: 0;">
+          ${data.reportTitle || '报告标题'}
+        </h1>
+        <div style="color: ${colors.primaryLight}; font-size: 14px;">
+          ${data.name || '姓名'} · ${data.department || '部门'} · ${formattedDateRange.value}
+        </div>
+      </div>
 
-    body {
-      padding: 20px;
-      min-height: 100vh;
-    }
+      <!-- 统计区域 -->
+      <div style="background: ${colors.bgLight}; padding: 15px 40px; display: flex; flex-wrap: wrap; gap: 30px; border-bottom: 1px solid ${colors.borderColor};">
+        <div style="font-size: 13px; color: ${colors.textSecondary};">
+          Bug/需求单: <span style="font-weight: 600; color: ${colors.primaryDark}; font-size: 16px;">${data.tasksCompleted}</span>
+        </div>
+        <div style="font-size: 13px; color: ${colors.textSecondary};">
+          MR合并: <span style="font-weight: 600; color: ${colors.primaryDark}; font-size: 16px;">${data.commits}</span>
+        </div>
+      </div>
 
-    /* CSS 变量定义 */
-    :root {
-      --primary-dark: #383e4e;
-      --primary-light: #b6bac5;
-      --bg-light: #f8f9fa;
-      --text-primary: #383e4e;
-      --text-secondary: #6c7380;
-      --border-color: #e5e7eb;
-      --success: #4caf50;
-      --danger: #f44336;
-    }
-
-    /* 报告容器 */
-    .report-container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      overflow: visible !important;
-    }
-
-    /* 报告头部 */
-    .report-header {
-      background: var(--primary-dark);
-      color: white;
-      padding: 40px;
-      border-top-left-radius: 8px;
-      border-top-right-radius: 8px;
-    }
-
-    .report-title {
-      font-size: 32px;
-      font-weight: 300;
-      margin-bottom: 10px;
-    }
-
-    .report-meta {
-      color: var(--primary-light);
-      font-size: 14px;
-    }
-
-    /* 统计区域 */
-    .report-stats {
-      background: var(--bg-light);
-      padding: 15px 40px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 30px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .stat-item {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    .stat-value {
-      font-weight: 600;
-      color: var(--primary-dark);
-      font-size: 16px;
-    }
-
-    /* 报告章节 */
-    .report-section {
-      padding: 30px 40px;
-    }
-
-    .report-section-title {
-      font-size: 24px;
-      color: var(--primary-dark);
-      margin-bottom: 20px;
-      font-weight: 300;
-    }
-
-    .section-count {
-      font-size: 18px;
-      color: var(--primary-light);
-      font-weight: 400;
-      margin-left: 8px;
-    }
-
-    /* 卡片样式 */
-    .output-card,
-    .achievement-card,
-    .plan-card {
-      background: var(--bg-light);
-      padding: 20px;
-      margin-bottom: 15px;
-      border-left: 3px solid var(--primary-dark);
-      border-radius: 4px;
-    }
-
-    .card-title {
-      font-size: 16px;
-      color: var(--primary-dark);
-      margin-bottom: 10px;
-      font-weight: 500;
-    }
-
-    .card-content {
-      color: var(--text-secondary);
-      font-size: 14px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-    }
-
-    /* 收获卡片网格布局 */
-    .report-section:nth-child(3) > div {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
-      gap: 15px !important;
-    }
-
-    /* 报告底部 */
-    .report-footer {
-      background: var(--primary-dark);
-      color: var(--primary-light);
-      padding: 20px 40px;
-      text-align: center;
-      font-size: 13px;
-      border-bottom-left-radius: 8px;
-      border-bottom-right-radius: 8px;
-    }
-
-    /* 列表样式 */
-    ul {
-      margin: 0;
-      padding-left: 20px;
-    }
-
-    li {
-      margin-bottom: 5px;
-    }
-
-    /* 打印优化 */
-    @media print {
-      body {
-        background: white !important;
-        padding: 0 !important;
+      <!-- 本周工作 -->
+      ${
+        outputs.length > 0
+          ? `
+        <div style="padding: 30px 40px;">
+          <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
+            <span style="color: ${colors.primaryLight}; font-size: 18px;">01</span> 本周工作
+            <span style="font-size: 18px; color: ${colors.primaryLight}; font-weight: 400; margin-left: 8px;">(${outputs.length})</span>
+          </h2>
+          ${outputs
+            .map(
+              (output) => `
+            <div style="background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;">
+              <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
+                ${output.title || '未命名工作'}
+              </h3>
+              <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
+                ${
+                  output.content
+                    ? output.content.includes('\n')
+                      ? `<ul style="margin: 0; padding-left: 20px;">${output.content
+                          .split('\n')
+                          .filter((l) => l.trim())
+                          .map((line) => `<li style="margin-bottom: 5px;">${line}</li>`)
+                          .join('')}</ul>`
+                      : output.content
+                    : '暂无描述'
+                }
+              </div>
+            </div>
+          `,
+            )
+            .join('')}
+        </div>
+      `
+          : ''
       }
 
-      .report-container {
-        box-shadow: none !important;
-        border-radius: 0 !important;
+      <!-- 个人收获 -->
+      ${
+        achievements.length > 0
+          ? `
+        <div style="padding: 30px 40px;">
+          <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
+            <span style="color: ${colors.primaryLight}; font-size: 18px;">02</span> 个人收获
+            <span style="font-size: 18px; color: ${colors.primaryLight}; font-weight: 400; margin-left: 8px;">(${achievements.length})</span>
+          </h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            ${achievements
+              .map((achievement, index) => {
+                const icons = ['💡', '🤝', '📊', '🎯']
+                return `
+                <div style="background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;">
+                  <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
+                    ${icons[index % 4]} ${achievement.title || '未命名个人收获'}
+                  </h3>
+                  <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
+                    ${achievement.content || '暂无描述'}
+                  </div>
+                </div>
+              `
+              })
+              .join('')}
+          </div>
+        </div>
+      `
+          : ''
       }
-    }
 
-    /* 响应式设计 */
-    @media (max-width: 768px) {
-      body {
-        padding: 10px;
+      <!-- 下周计划 -->
+      ${
+        plans.length > 0
+          ? `
+        <div style="padding: 30px 40px;">
+          <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
+            <span style="color: ${colors.primaryLight}; font-size: 18px;">03</span> 下周计划
+          </h2>
+          ${plans
+            .map(
+              (plan) => `
+            <div style="background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;">
+              <div style="font-size: 13px; color: ${colors.primaryLight}; margin-bottom: 5px;">
+                ${plan.time || '待定'}
+              </div>
+              <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
+                ${plan.title || '未命名计划'}
+              </h3>
+              <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
+                ${plan.content || '暂无描述'}
+              </div>
+            </div>
+          `,
+            )
+            .join('')}
+        </div>
+      `
+          : ''
       }
 
-      .report-header,
-      .report-stats,
-      .report-section {
-        padding: 20px;
-      }
-
-      .report-title {
-        font-size: 24px;
-      }
-
-      .report-section-title {
-        font-size: 20px;
-      }
-
-      .report-stats {
-        gap: 15px;
-      }
-    }
+      <!-- 报告底部 -->
+      <div style="background: ${colors.primaryDark}; color: ${colors.primaryLight}; padding: 20px 40px; text-align: center; font-size: 13px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
+        ${data.name || '姓名'} · ${data.department || '部门'} · ${new Date().toISOString().split('T')[0]}
+      </div>
+    </div>
   `
 
-  const fullHTML: string = `
-<!DOCTYPE html>
+  const fullHTML: string = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${reportData.value.reportTitle || '报告'} - ${reportData.value.name || '姓名'}</title>
-    <style>
-        ${exportStyles}
-    </style>
 </head>
-<body>
+<body style="margin: 0; padding: 20px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f8f9fa; line-height: 1.6; color: #383e4e;">
     ${reportHTML}
 </body>
 </html>`
@@ -735,7 +820,6 @@ const clearAllData = (): void => {
     const lastMonday = new Date(today)
     lastMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
     const lastFriday = new Date(lastMonday)
-    lastFriday.setDate(lastMonday.getDate() + 4)
 
     defaultData.startDate = lastMonday.toISOString().split('T')[0]
     defaultData.endDate = lastFriday.toISOString().split('T')[0]
@@ -907,6 +991,76 @@ const clearAllData = (): void => {
   background: #5a6275;
 }
 
+/* 折叠配置样式 */
+.collapsible-config {
+  background: var(--bg-light);
+  padding: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.config-description {
+  margin-bottom: 20px;
+}
+
+.config-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.config-controls {
+  margin-bottom: 20px;
+}
+
+.config-item {
+  margin-bottom: 12px;
+}
+
+.config-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.config-checkbox {
+  margin-right: 10px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.config-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.config-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-config {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border: 1px solid var(--border-color);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s;
+  flex: 1;
+}
+
+.btn-config:hover {
+  background: var(--primary-dark);
+  color: white;
+}
+
 /* 右侧预览 */
 .preview-panel {
   background: white;
@@ -1040,6 +1194,41 @@ const clearAllData = (): void => {
   color: var(--primary-light);
   font-weight: 400;
   margin-left: 8px;
+}
+
+/* 折叠按钮样式 */
+.collapsible-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--primary-light);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  transform: rotate(0deg);
+  margin-left: 10px;
+}
+
+.collapse-btn:hover {
+  background: var(--bg-light);
+  color: var(--primary-dark);
+}
+
+.collapse-btn.collapsed {
+  transform: rotate(-90deg);
+}
+
+.section-content {
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .output-card,
