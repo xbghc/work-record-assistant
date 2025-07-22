@@ -81,7 +81,10 @@
                 class="item-container"
               >
                 <div class="item-header">
-                  <span class="item-title">本周工作 {{ index + 1 }}</span>
+                  <span class="item-title">
+                    <span class="item-icon">📋</span>
+                    工作项 {{ index + 1 }}
+                  </span>
                   <button type="button" class="btn-remove" @click="removeItem('outputs', index)">
                     删除
                   </button>
@@ -118,7 +121,10 @@
                 class="item-container"
               >
                 <div class="item-header">
-                  <span class="item-title">个人收获 {{ index + 1 }}</span>
+                  <span class="item-title">
+                    <span class="item-icon">💡</span>
+                    收获 {{ index + 1 }}
+                  </span>
                   <button
                     type="button"
                     class="btn-remove"
@@ -155,7 +161,10 @@
             <div class="dynamic-section">
               <div v-for="(item, index) in reportData.plans" :key="item.id" class="item-container">
                 <div class="item-header">
-                  <span class="item-title">计划 {{ index + 1 }}</span>
+                  <span class="item-title">
+                    <span class="item-icon">🎯</span>
+                    计划 {{ index + 1 }}
+                  </span>
                   <button type="button" class="btn-remove" @click="removeItem('plans', index)">
                     删除
                   </button>
@@ -490,20 +499,202 @@ const exportReport = (): void => {
 
   const reportHTML: string = previewContentRef.value.innerHTML
 
-  // 提取预览所需的 CSS
-  const styles: string = Array.from(document.styleSheets)
-    .map((sheet: CSSStyleSheet) => {
-      try {
-        return Array.from(sheet.cssRules)
-          .map((rule: CSSRule) => rule.cssText)
-          .join('\n')
-      } catch (e: unknown) {
-        // 忽略由于跨域策略无法访问的样式表
-        console.error(e)
-        return ''
+  // 为导出文档定制的CSS样式
+  const exportStyles: string = `
+    /* 重置和基础样式 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: auto !important;
+      overflow: visible !important;
+      background: #f8f9fa;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      line-height: 1.6;
+      color: #383e4e;
+    }
+
+    body {
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    /* CSS 变量定义 */
+    :root {
+      --primary-dark: #383e4e;
+      --primary-light: #b6bac5;
+      --bg-light: #f8f9fa;
+      --text-primary: #383e4e;
+      --text-secondary: #6c7380;
+      --border-color: #e5e7eb;
+      --success: #4caf50;
+      --danger: #f44336;
+    }
+
+    /* 报告容器 */
+    .report-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      overflow: visible !important;
+    }
+
+    /* 报告头部 */
+    .report-header {
+      background: var(--primary-dark);
+      color: white;
+      padding: 40px;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+
+    .report-title {
+      font-size: 32px;
+      font-weight: 300;
+      margin-bottom: 10px;
+    }
+
+    .report-meta {
+      color: var(--primary-light);
+      font-size: 14px;
+    }
+
+    /* 统计区域 */
+    .report-stats {
+      background: var(--bg-light);
+      padding: 15px 40px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .stat-item {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: var(--primary-dark);
+      font-size: 16px;
+    }
+
+    /* 报告章节 */
+    .report-section {
+      padding: 30px 40px;
+    }
+
+    .report-section-title {
+      font-size: 24px;
+      color: var(--primary-dark);
+      margin-bottom: 20px;
+      font-weight: 300;
+    }
+
+    .section-count {
+      font-size: 18px;
+      color: var(--primary-light);
+      font-weight: 400;
+      margin-left: 8px;
+    }
+
+    /* 卡片样式 */
+    .output-card,
+    .achievement-card,
+    .plan-card {
+      background: var(--bg-light);
+      padding: 20px;
+      margin-bottom: 15px;
+      border-left: 3px solid var(--primary-dark);
+      border-radius: 4px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      color: var(--primary-dark);
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .card-content {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* 收获卡片网格布局 */
+    .report-section:nth-child(3) > div {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+      gap: 15px !important;
+    }
+
+    /* 报告底部 */
+    .report-footer {
+      background: var(--primary-dark);
+      color: var(--primary-light);
+      padding: 20px 40px;
+      text-align: center;
+      font-size: 13px;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+
+    /* 列表样式 */
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 5px;
+    }
+
+    /* 打印优化 */
+    @media print {
+      body {
+        background: white !important;
+        padding: 0 !important;
       }
-    })
-    .join('\n')
+
+      .report-container {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      .report-header,
+      .report-stats,
+      .report-section {
+        padding: 20px;
+      }
+
+      .report-title {
+        font-size: 24px;
+      }
+
+      .report-section-title {
+        font-size: 20px;
+      }
+
+      .report-stats {
+        gap: 15px;
+      }
+    }
+  `
 
   const fullHTML: string = `
 <!DOCTYPE html>
@@ -513,11 +704,7 @@ const exportReport = (): void => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${reportData.value.reportTitle || '报告'} - ${reportData.value.name || '姓名'}</title>
     <style>
-        ${styles}
-        /* 打印优化 */
-        @media print {
-            body { background: white; }
-        }
+        ${exportStyles}
     </style>
 </head>
 <body>
@@ -678,6 +865,15 @@ const clearAllData = (): void => {
 .item-title {
   font-weight: 500;
   color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.item-icon {
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .btn-remove {
