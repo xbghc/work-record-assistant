@@ -8,7 +8,18 @@
             <span class="item-icon">{{ icon }}</span>
             {{ itemLabel }} {{ index + 1 }}
           </span>
-          <button type="button" class="btn-remove" @click="removeItem(index)">删除</button>
+          <div class="item-actions">
+            <label class="collapsible-toggle">
+              <input
+                type="checkbox"
+                :checked="item.collapsible || false"
+                @change="updateItem(index, 'collapsible', ($event.target as HTMLInputElement).checked)"
+                class="toggle-checkbox"
+              />
+              <span class="toggle-label">可折叠</span>
+            </label>
+            <button type="button" class="btn-remove" @click="removeItem(index)">删除</button>
+          </div>
         </div>
 
         <!-- 计划项的特殊布局：标题和时间在同一行 -->
@@ -137,13 +148,15 @@ const removeItem = (index: number) => {
   emit('update:items', updatedItems)
 }
 
-const updateItem = (index: number, field: string, value: string) => {
+const updateItem = (index: number, field: string, value: string | boolean) => {
   const updatedItems = [...props.items]
   const item = updatedItems[index]
   if (field === 'title' || field === 'content') {
-    item[field] = value
+    item[field] = value as string
   } else if (field === 'time' && 'time' in item) {
-    ;(item as PlanItem).time = value
+    ;(item as PlanItem).time = value as string
+  } else if (field === 'collapsible') {
+    item.collapsible = value as boolean
   }
   emit('update:items', updatedItems)
 }
@@ -180,6 +193,31 @@ const updateItem = (index: number, field: string, value: string) => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.collapsible-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.toggle-checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.toggle-label {
+  user-select: none;
 }
 
 .item-title {

@@ -23,7 +23,7 @@ export const getDefaultReportData = (): ReportData => ({
 
 // 动态项的工厂函数
 export const createNewItem = (type: ItemType): ReportItem | PlanItem => {
-  const baseItem: ReportItem = { id: Date.now(), title: '', content: '' }
+  const baseItem: ReportItem = { id: Date.now(), title: '', content: '', collapsible: false }
   if (type === 'plans') {
     return { ...baseItem, time: '' } as PlanItem
   }
@@ -38,6 +38,14 @@ export const useLocalStorage = () => {
     } catch (error) {
       console.warn('无法保存数据到本地存储:', error)
     }
+  }
+
+  // 迁移旧数据格式，为items添加collapsible属性
+  const migrateItemsData = (items: (ReportItem | PlanItem)[]): (ReportItem | PlanItem)[] => {
+    return items.map(item => ({
+      ...item,
+      collapsible: item.collapsible ?? false, // 如果没有collapsible属性，默认为false
+    }))
   }
 
   // 从本地存储加载数据
@@ -58,6 +66,10 @@ export const useLocalStorage = () => {
               ...defaultData.collapsible,
               ...(parsed.collapsible || {}),
             },
+            // 迁移各个items的数据结构
+            outputs: migrateItemsData(parsed.outputs || []),
+            achievements: migrateItemsData(parsed.achievements || []),
+            plans: migrateItemsData(parsed.plans || []),
           }
           return mergedData as ReportData
         }

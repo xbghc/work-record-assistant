@@ -2,6 +2,7 @@ export interface ReportItem {
   id: number
   title: string
   content: string
+  collapsible?: boolean
 }
 
 export interface PlanItem extends ReportItem {

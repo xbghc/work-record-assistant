@@ -5,6 +5,15 @@ export const useReportExporter = (
   reportData: ReportData,
   formattedDateRange: ComputedRef<string>,
 ) => {
+  // 基础样式变量
+  const colors = {
+    primaryDark: '#383e4e',
+    primaryLight: '#b6bac5',
+    bgLight: '#f8f9fa',
+    textSecondary: '#6c7380',
+    borderColor: '#e5e7eb',
+  }
+
   // 计算属性，过滤掉完全为空的动态项
   const validOutputs = computed((): ReportItem[] =>
     reportData.outputs.filter((item: ReportItem) => item.title || item.content),
@@ -18,6 +27,60 @@ export const useReportExporter = (
     reportData.plans.filter((item: PlanItem) => item.title || item.content || item.time),
   )
 
+  // 生成邮件兼容的折叠HTML结构
+  const generateCollapsibleSection = (
+    sectionNumber: string,
+    title: string,
+    content: string,
+    isCollapsible: boolean,
+    itemCount?: number
+  ): string => {
+    const countText = itemCount !== undefined ? ` (${itemCount})` : ''
+    const sectionTitle = `<span style="color: ${colors.primaryLight}; font-size: 18px;">${sectionNumber}</span> ${title}${countText}`
+    
+    if (!isCollapsible) {
+      return `
+        <div style="padding: 30px 40px;">
+          <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
+            ${sectionTitle}
+          </h2>
+          ${content}
+        </div>
+      `
+    }
+
+    // 使用 details/summary 实现邮件兼容的折叠
+    return `
+      <div style="padding: 30px 40px;">
+        <details style="border: none; outline: none;" open>
+          <summary style="
+            font-size: 24px; 
+            color: ${colors.primaryDark}; 
+            margin-bottom: 20px; 
+            font-weight: 300; 
+            cursor: pointer; 
+            list-style: none; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid ${colors.borderColor};
+          ">
+            <span>${sectionTitle}</span>
+            <span style="
+              font-size: 16px; 
+              color: ${colors.primaryLight}; 
+              transition: transform 0.3s ease;
+            ">▼</span>
+          </summary>
+          <div style="margin-top: 20px;">
+            ${content}
+          </div>
+        </details>
+      </div>
+    `
+  }
+
   // 导出报告为 HTML 文件
   const exportReport = (): void => {
     const data = reportData
@@ -25,14 +88,108 @@ export const useReportExporter = (
     const achievements = validAchievements.value
     const plans = validPlans.value
 
-    // 基础样式变量
-    const colors = {
-      primaryDark: '#383e4e',
-      primaryLight: '#b6bac5',
-      bgLight: '#f8f9fa',
-      textSecondary: '#6c7380',
-      borderColor: '#e5e7eb',
+
+    // 生成单个Item的HTML（网页版本，支持折叠）
+    const generateWebItemHTML = (
+      item: ReportItem | PlanItem, 
+      titleContent: string,
+      contentHTML: string
+    ): string => {
+      const cardBaseStyle = `background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;`
+      
+      if (!item.collapsible) {
+        return `
+          <div style="${cardBaseStyle}">
+            <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
+              ${titleContent}
+            </h3>
+            <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
+              ${contentHTML}
+            </div>
+          </div>
+        `
+      }
+
+      return `
+        <details style="${cardBaseStyle} border: none; outline: none;">
+          <summary style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            margin-bottom: 10px;
+          ">
+            <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin: 0; font-weight: 500; flex-grow: 1;">
+              ${titleContent}
+            </h3>
+            <span style="font-size: 14px; color: ${colors.primaryLight}; margin-left: 10px;">▼</span>
+          </summary>
+          <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6; margin-top: 10px; padding-top: 10px; border-top: 1px solid ${colors.borderColor};">
+            ${contentHTML}
+          </div>
+        </details>
+      `
     }
+
+    // 生成各个章节的内容
+    const outputsContent = outputs.length > 0 ? outputs
+      .map((output) => {
+        const contentHTML = output.content
+          ? output.content.includes('\n')
+            ? `<ul style="margin: 0; padding-left: 20px;">${output.content
+                .split('\n')
+                .filter((l) => l.trim())
+                .map((line) => `<li style="margin-bottom: 5px;">${line}</li>`)
+                .join('')}</ul>`
+            : output.content
+          : '暂无描述'
+        
+        return generateWebItemHTML(
+          output,
+          output.title || '未命名工作',
+          contentHTML
+        )
+      })
+      .join('') : ''
+
+    const achievementsContent = achievements.length > 0 ? `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+        ${achievements
+          .map((achievement, index) => {
+            const icons = ['💡', '🤝', '📊', '🎯']
+            const titleContent = `${icons[index % 4]} ${achievement.title || '未命名个人收获'}`
+            const contentHTML = achievement.content || '暂无描述'
+            
+            return generateWebItemHTML(
+              achievement,
+              titleContent,
+              contentHTML
+            )
+          })
+          .join('')}
+      </div>
+    ` : ''
+
+    const plansContent = plans.length > 0 ? plans
+      .map((plan) => {
+        const titleContent = `
+          <div style="font-size: 13px; color: ${colors.primaryLight}; margin-bottom: 5px;">
+            ${(plan as PlanItem).time || '待定'}
+          </div>
+          ${plan.title || '未命名计划'}
+        `
+        const contentHTML = plan.content || '暂无描述'
+        
+        return generateWebItemHTML(
+          plan,
+          titleContent,
+          contentHTML
+        )
+      })
+      .join('') : ''
 
     // 生成完整的内联样式HTML
     const reportHTML = `
@@ -57,104 +214,10 @@ export const useReportExporter = (
           </div>
         </div>
 
-        <!-- 本周工作 -->
-        ${
-          outputs.length > 0
-            ? `
-          <div style="padding: 30px 40px;">
-            <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
-              <span style="color: ${colors.primaryLight}; font-size: 18px;">01</span> 本周工作
-              <span style="font-size: 18px; color: ${colors.primaryLight}; font-weight: 400; margin-left: 8px;">(${outputs.length})</span>
-            </h2>
-            ${outputs
-              .map(
-                (output) => `
-              <div style="background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;">
-                <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
-                  ${output.title || '未命名工作'}
-                </h3>
-                <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
-                  ${
-                    output.content
-                      ? output.content.includes('\n')
-                        ? `<ul style="margin: 0; padding-left: 20px;">${output.content
-                            .split('\n')
-                            .filter((l) => l.trim())
-                            .map((line) => `<li style="margin-bottom: 5px;">${line}</li>`)
-                            .join('')}</ul>`
-                        : output.content
-                      : '暂无描述'
-                  }
-                </div>
-              </div>
-            `,
-              )
-              .join('')}
-          </div>
-        `
-            : ''
-        }
-
-        <!-- 个人收获 -->
-        ${
-          achievements.length > 0
-            ? `
-          <div style="padding: 30px 40px;">
-            <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
-              <span style="color: ${colors.primaryLight}; font-size: 18px;">02</span> 个人收获
-              <span style="font-size: 18px; color: ${colors.primaryLight}; font-weight: 400; margin-left: 8px;">(${achievements.length})</span>
-            </h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-              ${achievements
-                .map((achievement, index) => {
-                  const icons = ['💡', '🤝', '📊', '🎯']
-                  return `
-                  <div style="background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;">
-                    <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
-                      ${icons[index % 4]} ${achievement.title || '未命名个人收获'}
-                    </h3>
-                    <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
-                      ${achievement.content || '暂无描述'}
-                    </div>
-                  </div>
-                `
-                })
-                .join('')}
-            </div>
-          </div>
-        `
-            : ''
-        }
-
-        <!-- 下周计划 -->
-        ${
-          plans.length > 0
-            ? `
-          <div style="padding: 30px 40px;">
-            <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
-              <span style="color: ${colors.primaryLight}; font-size: 18px;">03</span> 下周计划
-            </h2>
-            ${plans
-              .map(
-                (plan) => `
-              <div style="background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;">
-                <div style="font-size: 13px; color: ${colors.primaryLight}; margin-bottom: 5px;">
-                  ${plan.time || '待定'}
-                </div>
-                <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
-                  ${plan.title || '未命名计划'}
-                </h3>
-                <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
-                  ${plan.content || '暂无描述'}
-                </div>
-              </div>
-            `,
-              )
-              .join('')}
-          </div>
-        `
-            : ''
-        }
+        <!-- 使用折叠功能的各个章节 -->
+        ${outputs.length > 0 ? generateCollapsibleSection('01', '本周工作', outputsContent, data.collapsible.outputs, outputs.length) : ''}
+        ${achievements.length > 0 ? generateCollapsibleSection('02', '个人收获', achievementsContent, data.collapsible.achievements, achievements.length) : ''}
+        ${plans.length > 0 ? generateCollapsibleSection('03', '下周计划', plansContent, data.collapsible.plans) : ''}
 
         <!-- 报告底部 -->
         <div style="background: ${colors.primaryDark}; color: ${colors.primaryLight}; padding: 20px 40px; text-align: center; font-size: 13px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">

@@ -38,9 +38,14 @@
           :collapsible="reportData.collapsible.outputs"
           :item-count="validOutputs.length"
         >
-          <div v-for="output in validOutputs" :key="output.id" class="output-card">
-            <h3 class="card-title">{{ output.title || '未命名工作' }}</h3>
-            <div class="card-content">
+          <CollapsibleItem
+            v-for="output in validOutputs"
+            :key="output.id"
+            :item="output"
+            card-class="output-card"
+            default-title="未命名工作"
+          >
+            <template #content>
               <ul
                 v-if="
                   output.content &&
@@ -57,8 +62,8 @@
                 </li>
               </ul>
               <p v-else>{{ output.content || '暂无描述' }}</p>
-            </div>
-          </div>
+            </template>
+          </CollapsibleItem>
         </ReportSection>
 
         <ReportSection
@@ -74,17 +79,18 @@
               gap: 15px;
             "
           >
-            <div
+            <CollapsibleItem
               v-for="(achievement, index) in validAchievements"
               :key="achievement.id"
-              class="achievement-card"
+              :item="achievement"
+              card-class="achievement-card"
+              default-title="未命名个人收获"
             >
-              <h3 class="card-title">
+              <template #title>
                 {{ ['💡', '🤝', '📊', '🎯'][index % 4] }}
                 {{ achievement.title || '未命名个人收获' }}
-              </h3>
-              <div class="card-content">{{ achievement.content || '暂无描述' }}</div>
-            </div>
+              </template>
+            </CollapsibleItem>
           </div>
         </ReportSection>
 
@@ -93,13 +99,22 @@
           title="下周计划"
           :collapsible="reportData.collapsible.plans"
         >
-          <div v-for="plan in validPlans" :key="plan.id" class="plan-card">
-            <div style="font-size: 13px; color: var(--primary-light); margin-bottom: 5px">
-              {{ plan.time || '待定' }}
-            </div>
-            <h3 class="card-title">{{ plan.title || '未命名计划' }}</h3>
-            <div class="card-content">{{ plan.content || '暂无描述' }}</div>
-          </div>
+          <CollapsibleItem
+            v-for="plan in validPlans"
+            :key="plan.id"
+            :item="plan"
+            card-class="plan-card"
+            default-title="未命名计划"
+          >
+            <template #title>
+              <div>
+                <div style="font-size: 13px; color: var(--primary-light); margin-bottom: 5px">
+                  {{ (plan as any).time || '待定' }}
+                </div>
+                {{ plan.title || '未命名计划' }}
+              </div>
+            </template>
+          </CollapsibleItem>
         </ReportSection>
 
         <div class="report-footer">
@@ -115,6 +130,7 @@
 import { computed, ref } from 'vue'
 import type { ReportData, ReportItem, PlanItem } from '@/types/report'
 import ReportSection from './ReportSection.vue'
+import CollapsibleItem from './CollapsibleItem.vue'
 
 interface Props {
   reportData: ReportData
