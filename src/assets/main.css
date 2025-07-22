@@ -1,10 +1,21 @@
 @import './base.css';
 
+/* CSS 变量定义 */
+:root {
+  --primary-dark: #383e4e;
+  --primary-light: #b6bac5;
+  --bg-light: #f8f9fa;
+  --text-primary: #383e4e;
+  --text-secondary: #6c7380;
+  --border-color: #e5e7eb;
+  --success: #4caf50;
+  --danger: #f44336;
+}
+
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  height: 100vh;
   font-weight: normal;
+  padding: 0;
 }
 
 a,
@@ -21,15 +32,13 @@ a,
   }
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+body {
+  margin: 0;
+  padding: 0;
+}
 
+@media (min-width: 1024px) {
   #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+    height: 100vh;
   }
 }

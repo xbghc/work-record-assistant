@@ -5,547 +5,71 @@
       <div class="editor-panel">
         <form @submit.prevent>
           <!-- 基本信息 -->
-          <div class="form-section">
-            <h2 class="section-header">基本信息</h2>
-            <div class="form-group">
-              <label class="form-label">报告标题</label>
-              <input
-                type="text"
-                class="form-input"
-                v-model="reportData.reportTitle"
-                placeholder="请输入报告标题（如：工作周报、月度总结等）"
-                required
-              />
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">姓名</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  v-model="reportData.name"
-                  placeholder="请输入姓名"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label class="form-label">部门</label>
-                <input
-                  type="text"
-                  class="form-input"
-                  v-model="reportData.department"
-                  placeholder="请输入部门"
-                  required
-                />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">开始日期</label>
-                <input type="date" class="form-input" v-model="reportData.startDate" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label">结束日期</label>
-                <input type="date" class="form-input" v-model="reportData.endDate" required />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">完成Bug/需求单</label>
-                <input
-                  type="number"
-                  class="form-input"
-                  v-model.number="reportData.tasksCompleted"
-                  placeholder="12"
-                />
-              </div>
-              <div class="form-group">
-                <label class="form-label">MR合并数</label>
-                <input
-                  type="number"
-                  class="form-input"
-                  v-model.number="reportData.commits"
-                  placeholder="28"
-                />
-              </div>
-            </div>
-          </div>
+          <BasicInfoForm v-model="reportData" />
 
           <!-- 折叠配置 -->
-          <div class="form-section">
-            <h2 class="section-header">内容折叠配置</h2>
-            <div class="collapsible-config">
-              <div class="config-description">
-                <p class="config-hint">
-                  启用折叠功能后，对应章节在预览和导出的报告中将显示展开/收起按钮
-                </p>
-              </div>
-
-              <div class="config-controls">
-                <div class="config-item">
-                  <label class="config-label">
-                    <input
-                      type="checkbox"
-                      v-model="reportData.collapsible.outputs"
-                      class="config-checkbox"
-                    />
-                    <span class="config-text">📋 本周工作可折叠</span>
-                  </label>
-                </div>
-
-                <div class="config-item">
-                  <label class="config-label">
-                    <input
-                      type="checkbox"
-                      v-model="reportData.collapsible.achievements"
-                      class="config-checkbox"
-                    />
-                    <span class="config-text">💡 个人收获可折叠</span>
-                  </label>
-                </div>
-
-                <div class="config-item">
-                  <label class="config-label">
-                    <input
-                      type="checkbox"
-                      v-model="reportData.collapsible.plans"
-                      class="config-checkbox"
-                    />
-                    <span class="config-text">🎯 下周计划可折叠</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="config-actions">
-                <button type="button" class="btn-config" @click="setAllCollapsible(true)">
-                  全部启用折叠
-                </button>
-                <button type="button" class="btn-config" @click="setAllCollapsible(false)">
-                  全部禁用折叠
-                </button>
-              </div>
-            </div>
-          </div>
+          <CollapsibleConfig v-model="reportData.collapsible" />
 
           <!-- 本周工作 -->
-          <div class="form-section">
-            <h2 class="section-header">本周工作</h2>
-            <div class="dynamic-section">
-              <div
-                v-for="(item, index) in reportData.outputs"
-                :key="item.id"
-                class="item-container"
-              >
-                <div class="item-header">
-                  <span class="item-title">
-                    <span class="item-icon">📋</span>
-                    工作项 {{ index + 1 }}
-                  </span>
-                  <button type="button" class="btn-remove" @click="removeItem('outputs', index)">
-                    删除
-                  </button>
-                </div>
-                <div class="form-group">
-                  <input
-                    type="text"
-                    class="form-input"
-                    v-model="item.title"
-                    placeholder="工作标题"
-                  />
-                </div>
-                <div class="form-group">
-                  <textarea
-                    class="form-textarea"
-                    v-model="item.content"
-                    placeholder="详细描述（支持换行，每行将显示为一个列表项）"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-            <button type="button" class="btn-add" @click="addItem('outputs')">
-              + 添加本周工作
-            </button>
-          </div>
+          <DynamicItemList
+            type="outputs"
+            :items="reportData.outputs"
+            @update:items="updateItems('outputs', $event)"
+          />
 
           <!-- 个人收获 -->
-          <div class="form-section">
-            <h2 class="section-header">个人收获</h2>
-            <div class="dynamic-section">
-              <div
-                v-for="(item, index) in reportData.achievements"
-                :key="item.id"
-                class="item-container"
-              >
-                <div class="item-header">
-                  <span class="item-title">
-                    <span class="item-icon">💡</span>
-                    收获 {{ index + 1 }}
-                  </span>
-                  <button
-                    type="button"
-                    class="btn-remove"
-                    @click="removeItem('achievements', index)"
-                  >
-                    删除
-                  </button>
-                </div>
-                <div class="form-group">
-                  <input
-                    type="text"
-                    class="form-input"
-                    v-model="item.title"
-                    placeholder="个人收获标题"
-                  />
-                </div>
-                <div class="form-group">
-                  <textarea
-                    class="form-textarea"
-                    v-model="item.content"
-                    placeholder="详细描述"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-            <button type="button" class="btn-add" @click="addItem('achievements')">
-              + 添加个人收获
-            </button>
-          </div>
+          <DynamicItemList
+            type="achievements"
+            :items="reportData.achievements"
+            @update:items="updateItems('achievements', $event)"
+          />
 
           <!-- 下周计划 -->
-          <div class="form-section">
-            <h2 class="section-header">下周计划</h2>
-            <div class="dynamic-section">
-              <div v-for="(item, index) in reportData.plans" :key="item.id" class="item-container">
-                <div class="item-header">
-                  <span class="item-title">
-                    <span class="item-icon">🎯</span>
-                    计划 {{ index + 1 }}
-                  </span>
-                  <button type="button" class="btn-remove" @click="removeItem('plans', index)">
-                    删除
-                  </button>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <input
-                      type="text"
-                      class="form-input"
-                      v-model="item.title"
-                      placeholder="计划标题"
-                    />
-                  </div>
-                  <div class="form-group">
-                    <input
-                      type="text"
-                      class="form-input"
-                      v-model="item.time"
-                      placeholder="时间安排（如：周一-周二）"
-                    />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <textarea
-                    class="form-textarea"
-                    v-model="item.content"
-                    placeholder="详细描述"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-            <button type="button" class="btn-add" @click="addItem('plans')">+ 添加计划</button>
-          </div>
+          <DynamicItemList
+            type="plans"
+            :items="reportData.plans"
+            @update:items="updateItems('plans', $event)"
+          />
         </form>
       </div>
 
       <!-- 右侧预览 -->
-      <div class="preview-panel">
-        <div class="preview-controls">
-          <h3 class="preview-title">实时预览</h3>
-          <div class="preview-buttons">
-            <button class="btn-clear" @click="clearAllData" title="清除所有数据并重新开始">
-              🗑️ 清除数据
-            </button>
-            <button class="btn-export" @click="exportReport">导出HTML</button>
-          </div>
-        </div>
-        <div class="preview-content" ref="previewContentRef">
-          <div v-if="!isFormStarted" style="text-align: center; color: #999; padding: 100px 20px">
-            <p style="font-size: 18px; margin-bottom: 10px">请填写左侧表单</p>
-            <p style="font-size: 14px">预览内容将实时显示在这里</p>
-          </div>
-          <div v-else class="report-container">
-            <div class="report-header">
-              <h1 class="report-title">{{ reportData.reportTitle || '报告标题' }}</h1>
-              <div class="report-meta">
-                {{ reportData.name || '姓名' }} · {{ reportData.department || '部门' }} ·
-                {{ formattedDateRange }}
-              </div>
-            </div>
-
-            <div class="report-stats">
-              <div class="stat-item">
-                Bug/需求单: <span class="stat-value">{{ reportData.tasksCompleted }}</span>
-              </div>
-              <div class="stat-item">
-                MR合并: <span class="stat-value">{{ reportData.commits }}</span>
-              </div>
-            </div>
-
-            <div class="report-section">
-              <h2
-                class="report-section-title"
-                :class="{ 'collapsible-title': reportData.collapsible.outputs }"
-              >
-                <span style="color: var(--primary-light); font-size: 18px">01</span> 本周工作
-                <span class="section-count">({{ validOutputs.length }})</span>
-                <button
-                  v-if="reportData.collapsible.outputs"
-                  class="collapse-btn"
-                  @click="toggleSection('outputs')"
-                  :class="{ collapsed: collapsedSections.outputs }"
-                >
-                  ▼
-                </button>
-              </h2>
-              <div
-                v-show="!reportData.collapsible.outputs || !collapsedSections.outputs"
-                class="section-content"
-              >
-                <div v-for="output in validOutputs" :key="output.id" class="output-card">
-                  <h3 class="card-title">{{ output.title || '未命名工作' }}</h3>
-                  <div class="card-content">
-                    <ul
-                      v-if="
-                        output.content &&
-                        output.content.split('\n').filter((line) => line.trim()).length > 1
-                      "
-                      style="margin: 0; padding-left: 20px"
-                    >
-                      <li
-                        v-for="(line, i) in output.content.split('\n').filter((l) => l.trim())"
-                        :key="i"
-                        style="margin-bottom: 5px"
-                      >
-                        {{ line }}
-                      </li>
-                    </ul>
-                    <p v-else>{{ output.content || '暂无描述' }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="report-section">
-              <h2
-                class="report-section-title"
-                :class="{ 'collapsible-title': reportData.collapsible.achievements }"
-              >
-                <span style="color: var(--primary-light); font-size: 18px">02</span> 个人收获
-                <span class="section-count">({{ validAchievements.length }})</span>
-                <button
-                  v-if="reportData.collapsible.achievements"
-                  class="collapse-btn"
-                  @click="toggleSection('achievements')"
-                  :class="{ collapsed: collapsedSections.achievements }"
-                >
-                  ▼
-                </button>
-              </h2>
-              <div
-                v-show="!reportData.collapsible.achievements || !collapsedSections.achievements"
-                class="section-content"
-              >
-                <div
-                  style="
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 15px;
-                  "
-                >
-                  <div
-                    v-for="(achievement, index) in validAchievements"
-                    :key="achievement.id"
-                    class="achievement-card"
-                  >
-                    <h3 class="card-title">
-                      {{ ['💡', '🤝', '📊', '🎯'][index % 4] }}
-                      {{ achievement.title || '未命名个人收获' }}
-                    </h3>
-                    <div class="card-content">{{ achievement.content || '暂无描述' }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="report-section">
-              <h2
-                class="report-section-title"
-                :class="{ 'collapsible-title': reportData.collapsible.plans }"
-              >
-                <span style="color: var(--primary-light); font-size: 18px">03</span> 下周计划
-                <button
-                  v-if="reportData.collapsible.plans"
-                  class="collapse-btn"
-                  @click="toggleSection('plans')"
-                  :class="{ collapsed: collapsedSections.plans }"
-                >
-                  ▼
-                </button>
-              </h2>
-              <div
-                v-show="!reportData.collapsible.plans || !collapsedSections.plans"
-                class="section-content"
-              >
-                <div v-for="plan in validPlans" :key="plan.id" class="plan-card">
-                  <div style="font-size: 13px; color: var(--primary-light); margin-bottom: 5px">
-                    {{ plan.time || '待定' }}
-                  </div>
-                  <h3 class="card-title">{{ plan.title || '未命名计划' }}</h3>
-                  <div class="card-content">{{ plan.content || '暂无描述' }}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="report-footer">
-              {{ reportData.name || '姓名' }} · {{ reportData.department || '部门' }} ·
-              {{ new Date().toLocaleDateString('zh-CN') }}
-            </div>
-          </div>
-        </div>
-      </div>
+      <ReportPreview
+        :report-data="reportData"
+        :formatted-date-range="formattedDateRange"
+        @clear-data="clearAllData"
+        @export-report="exportReport"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
+import type { ReportData, ReportItem, PlanItem, ItemType } from '@/types/report'
+import { useLocalStorage, getDefaultReportData } from '@/composables/useLocalStorage'
+import { useReportExporter } from '@/composables/useReportExporter'
+import BasicInfoForm from '@/components/report/BasicInfoForm.vue'
+import CollapsibleConfig from '@/components/report/CollapsibleConfig.vue'
+import DynamicItemList from '@/components/report/DynamicItemList.vue'
+import ReportPreview from '@/components/report/ReportPreview.vue'
 
-// 定义数据类型接口
-interface ReportItem {
-  id: number
-  title: string
-  content: string
-}
-
-interface PlanItem extends ReportItem {
-  time: string
-}
-
-interface CollapsibleConfig {
-  outputs: boolean
-  achievements: boolean
-  plans: boolean
-}
-
-interface ReportData {
-  reportTitle: string
-  name: string
-  department: string
-  startDate: string
-  endDate: string
-  tasksCompleted: number
-  commits: number
-  outputs: ReportItem[]
-  achievements: ReportItem[]
-  plans: PlanItem[]
-  collapsible: CollapsibleConfig
-}
-
-// 本地存储相关常量和函数
-const STORAGE_KEY = 'weekly-report-data'
-
-// 保存数据到本地存储
-const saveToLocalStorage = (data: ReportData): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-  } catch (error) {
-    console.warn('无法保存数据到本地存储:', error)
-  }
-}
-
-// 从本地存储加载数据
-const loadFromLocalStorage = (): ReportData | null => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      // 验证数据结构的完整性
-      if (parsed && typeof parsed === 'object') {
-        // 确保所有必需的属性都存在，特别是新添加的 collapsible 属性
-        const defaultData = getDefaultReportData()
-        const mergedData = {
-          ...defaultData,
-          ...parsed,
-          // 确保 collapsible 属性存在且完整
-          collapsible: {
-            ...defaultData.collapsible,
-            ...(parsed.collapsible || {}),
-          },
-        }
-        return mergedData as ReportData
-      }
-    }
-  } catch (error) {
-    console.warn('无法从本地存储加载数据:', error)
-  }
-  return null
-}
-
-// 清除本地存储数据
-const clearLocalStorage = (): void => {
-  try {
-    localStorage.removeItem(STORAGE_KEY)
-  } catch (error) {
-    console.warn('无法清除本地存储数据:', error)
-  }
-}
-
-// DOM 引用
-const previewContentRef = ref<HTMLElement | null>(null)
-
-// 默认数据结构
-const getDefaultReportData = (): ReportData => ({
-  reportTitle: '工作周报',
-  name: '',
-  department: '',
-  startDate: '',
-  endDate: '',
-  tasksCompleted: 0,
-  commits: 0,
-  outputs: [],
-  achievements: [],
-  plans: [],
-  collapsible: {
-    outputs: false,
-    achievements: false,
-    plans: false,
-  },
-})
+// 本地存储相关逻辑
+const { saveToLocalStorage, loadFromLocalStorage, clearLocalStorage, initializeDefaultData } =
+  useLocalStorage()
 
 // 响应式状态，用于存储所有表单数据
 // 尝试从本地存储加载数据，如果没有则使用默认数据
 const reportData = ref<ReportData>(loadFromLocalStorage() || getDefaultReportData())
 
-// 初始化日期和默认项
+// 初始化数据和默认项
 onMounted(() => {
   // 检查是否有本地存储的数据
   const hasStoredData = loadFromLocalStorage() !== null
 
   // 只有在没有存储数据时才设置默认值
   if (!hasStoredData) {
-    const today = new Date()
-    const lastMonday = new Date(today)
-    lastMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
-    const lastFriday = new Date(lastMonday)
-    lastFriday.setDate(lastMonday.getDate() + 4)
-
-    reportData.value.startDate = lastMonday.toISOString().split('T')[0]
-    reportData.value.endDate = lastFriday.toISOString().split('T')[0]
-
-    // 添加默认空项，引导用户填写
-    addItem('outputs')
-    addItem('achievements')
-    addItem('plans')
+    reportData.value = initializeDefaultData()
   }
 })
 
@@ -557,51 +81,6 @@ watch(
   },
   { deep: true }, // 深度监听，确保嵌套对象的变化也能被捕获
 )
-
-// 定义动态项类型
-type ItemType = 'outputs' | 'achievements' | 'plans'
-
-// 动态项的工厂函数
-const createNewItem = (type: ItemType): ReportItem | PlanItem => {
-  const baseItem: ReportItem = { id: Date.now(), title: '', content: '' }
-  if (type === 'plans') {
-    return { ...baseItem, time: '' } as PlanItem
-  }
-  return baseItem
-}
-
-// 添加项
-const addItem = (type: ItemType): void => {
-  const newItem = createNewItem(type)
-  if (type === 'plans') {
-    reportData.value[type].push(newItem as PlanItem)
-  } else {
-    reportData.value[type].push(newItem as ReportItem)
-  }
-}
-
-// 删除项
-const removeItem = (type: ItemType, index: number): void => {
-  reportData.value[type].splice(index, 1)
-}
-
-// 折叠配置管理
-const setAllCollapsible = (enabled: boolean): void => {
-  reportData.value.collapsible.outputs = enabled
-  reportData.value.collapsible.achievements = enabled
-  reportData.value.collapsible.plans = enabled
-}
-
-// 折叠状态管理（用于预览面板）
-const collapsedSections = ref<CollapsibleConfig>({
-  outputs: false,
-  achievements: false,
-  plans: false,
-})
-
-const toggleSection = (type: ItemType): void => {
-  collapsedSections.value[type] = !collapsedSections.value[type]
-}
 
 // 计算属性，用于格式化日期范围
 const formattedDateRange = computed((): string => {
@@ -615,195 +94,16 @@ const formattedDateRange = computed((): string => {
   return `${formatDate(startDate)} - ${formatDate(endDate)}`
 })
 
-// 计算属性，过滤掉完全为空的动态项，使预览更整洁
-const validOutputs = computed((): ReportItem[] =>
-  reportData.value.outputs.filter((item: ReportItem) => item.title || item.content),
-)
-const validAchievements = computed((): ReportItem[] =>
-  reportData.value.achievements.filter((item: ReportItem) => item.title || item.content),
-)
-const validPlans = computed((): PlanItem[] =>
-  reportData.value.plans.filter((item: PlanItem) => item.title || item.content || item.time),
-)
+// 报告导出功能
+const { exportReport } = useReportExporter(reportData.value, formattedDateRange)
 
-// 计算属性，判断用户是否已开始填写表单
-const isFormStarted = computed((): boolean => {
-  return !!(
-    reportData.value.reportTitle !== '工作周报' ||
-    reportData.value.name ||
-    reportData.value.department ||
-    validOutputs.value.length > 0 ||
-    validAchievements.value.length > 0 ||
-    validPlans.value.length > 0
-  )
-})
-
-// 导出报告为 HTML 文件
-const exportReport = (): void => {
-  if (!previewContentRef.value) return
-
-  const data = reportData.value
-  const outputs = validOutputs.value
-  const achievements = validAchievements.value
-  const plans = validPlans.value
-
-  // 基础样式变量
-  const colors = {
-    primaryDark: '#383e4e',
-    primaryLight: '#b6bac5',
-    bgLight: '#f8f9fa',
-    textSecondary: '#6c7380',
-    borderColor: '#e5e7eb',
+// 更新动态项列表
+const updateItems = (type: ItemType, items: (ReportItem | PlanItem)[]) => {
+  if (type === 'plans') {
+    reportData.value[type] = items as PlanItem[]
+  } else {
+    reportData.value[type] = items as ReportItem[]
   }
-
-  // 生成完整的内联样式HTML
-  const reportHTML = `
-    <div style="max-width: 800px; margin: 0 auto; background: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border-radius: 8px; overflow: visible;">
-      <!-- 报告头部 -->
-      <div style="background: ${colors.primaryDark}; color: white; padding: 40px; border-top-left-radius: 8px; border-top-right-radius: 8px;">
-        <h1 style="font-size: 32px; font-weight: 300; margin-bottom: 10px; margin-top: 0;">
-          ${data.reportTitle || '报告标题'}
-        </h1>
-        <div style="color: ${colors.primaryLight}; font-size: 14px;">
-          ${data.name || '姓名'} · ${data.department || '部门'} · ${formattedDateRange.value}
-        </div>
-      </div>
-
-      <!-- 统计区域 -->
-      <div style="background: ${colors.bgLight}; padding: 15px 40px; display: flex; flex-wrap: wrap; gap: 30px; border-bottom: 1px solid ${colors.borderColor};">
-        <div style="font-size: 13px; color: ${colors.textSecondary};">
-          Bug/需求单: <span style="font-weight: 600; color: ${colors.primaryDark}; font-size: 16px;">${data.tasksCompleted}</span>
-        </div>
-        <div style="font-size: 13px; color: ${colors.textSecondary};">
-          MR合并: <span style="font-weight: 600; color: ${colors.primaryDark}; font-size: 16px;">${data.commits}</span>
-        </div>
-      </div>
-
-      <!-- 本周工作 -->
-      ${
-        outputs.length > 0
-          ? `
-        <div style="padding: 30px 40px;">
-          <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
-            <span style="color: ${colors.primaryLight}; font-size: 18px;">01</span> 本周工作
-            <span style="font-size: 18px; color: ${colors.primaryLight}; font-weight: 400; margin-left: 8px;">(${outputs.length})</span>
-          </h2>
-          ${outputs
-            .map(
-              (output) => `
-            <div style="background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;">
-              <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
-                ${output.title || '未命名工作'}
-              </h3>
-              <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
-                ${
-                  output.content
-                    ? output.content.includes('\n')
-                      ? `<ul style="margin: 0; padding-left: 20px;">${output.content
-                          .split('\n')
-                          .filter((l) => l.trim())
-                          .map((line) => `<li style="margin-bottom: 5px;">${line}</li>`)
-                          .join('')}</ul>`
-                      : output.content
-                    : '暂无描述'
-                }
-              </div>
-            </div>
-          `,
-            )
-            .join('')}
-        </div>
-      `
-          : ''
-      }
-
-      <!-- 个人收获 -->
-      ${
-        achievements.length > 0
-          ? `
-        <div style="padding: 30px 40px;">
-          <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
-            <span style="color: ${colors.primaryLight}; font-size: 18px;">02</span> 个人收获
-            <span style="font-size: 18px; color: ${colors.primaryLight}; font-weight: 400; margin-left: 8px;">(${achievements.length})</span>
-          </h2>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-            ${achievements
-              .map((achievement, index) => {
-                const icons = ['💡', '🤝', '📊', '🎯']
-                return `
-                <div style="background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;">
-                  <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
-                    ${icons[index % 4]} ${achievement.title || '未命名个人收获'}
-                  </h3>
-                  <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
-                    ${achievement.content || '暂无描述'}
-                  </div>
-                </div>
-              `
-              })
-              .join('')}
-          </div>
-        </div>
-      `
-          : ''
-      }
-
-      <!-- 下周计划 -->
-      ${
-        plans.length > 0
-          ? `
-        <div style="padding: 30px 40px;">
-          <h2 style="font-size: 24px; color: ${colors.primaryDark}; margin-bottom: 20px; font-weight: 300; margin-top: 0;">
-            <span style="color: ${colors.primaryLight}; font-size: 18px;">03</span> 下周计划
-          </h2>
-          ${plans
-            .map(
-              (plan) => `
-            <div style="background: ${colors.bgLight}; padding: 20px; margin-bottom: 15px; border-left: 3px solid ${colors.primaryDark}; border-radius: 4px;">
-              <div style="font-size: 13px; color: ${colors.primaryLight}; margin-bottom: 5px;">
-                ${plan.time || '待定'}
-              </div>
-              <h3 style="font-size: 16px; color: ${colors.primaryDark}; margin-bottom: 10px; font-weight: 500; margin-top: 0;">
-                ${plan.title || '未命名计划'}
-              </h3>
-              <div style="color: ${colors.textSecondary}; font-size: 14px; line-height: 1.6;">
-                ${plan.content || '暂无描述'}
-              </div>
-            </div>
-          `,
-            )
-            .join('')}
-        </div>
-      `
-          : ''
-      }
-
-      <!-- 报告底部 -->
-      <div style="background: ${colors.primaryDark}; color: ${colors.primaryLight}; padding: 20px 40px; text-align: center; font-size: 13px; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
-        ${data.name || '姓名'} · ${data.department || '部门'} · ${new Date().toISOString().split('T')[0]}
-      </div>
-    </div>
-  `
-
-  const fullHTML: string = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${reportData.value.reportTitle || '报告'} - ${reportData.value.name || '姓名'}</title>
-</head>
-<body style="margin: 0; padding: 20px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f8f9fa; line-height: 1.6; color: #383e4e;">
-    ${reportHTML}
-</body>
-</html>`
-
-  // 创建并触发下载
-  const blob: Blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' })
-  const link: HTMLAnchorElement = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = `${reportData.value.reportTitle || '报告'}_${reportData.value.name || '姓名'}_${new Date().toISOString().split('T')[0]}.html`
-  link.click()
-  URL.revokeObjectURL(link.href)
 }
 
 // 清除所有数据
@@ -813,41 +113,12 @@ const clearAllData = (): void => {
     clearLocalStorage()
 
     // 重置为默认数据
-    const defaultData = getDefaultReportData()
-
-    // 设置默认日期
-    const today = new Date()
-    const lastMonday = new Date(today)
-    lastMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
-    const lastFriday = new Date(lastMonday)
-
-    defaultData.startDate = lastMonday.toISOString().split('T')[0]
-    defaultData.endDate = lastFriday.toISOString().split('T')[0]
-
-    // 添加默认空项
-    defaultData.outputs = [createNewItem('outputs') as ReportItem]
-    defaultData.achievements = [createNewItem('achievements') as ReportItem]
-    defaultData.plans = [createNewItem('plans') as PlanItem]
-
-    // 更新响应式数据
-    reportData.value = defaultData
+    reportData.value = initializeDefaultData()
   }
 }
 </script>
 
-<style>
-/* CSS 变量定义 */
-:root {
-  --primary-dark: #383e4e;
-  --primary-light: #b6bac5;
-  --bg-light: #f8f9fa;
-  --text-primary: #383e4e;
-  --text-secondary: #6c7380;
-  --border-color: #e5e7eb;
-  --success: #4caf50;
-  --danger: #f44336;
-}
-
+<style scoped>
 /* 主容器 - 适应导航栏布局 */
 .home-container {
   height: 100%;
@@ -873,417 +144,21 @@ const clearAllData = (): void => {
   border-radius: 8px;
 }
 
-.form-section {
-  margin-bottom: 30px;
-}
-
-.section-header {
-  font-size: 20px;
-  color: var(--primary-dark);
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.form-input,
-.form-textarea {
-  width: 100%;
-  padding: 10px 15px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 14px;
-  transition: border-color 0.3s;
-  font-family: inherit;
-}
-
-.form-input:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: var(--primary-dark);
-}
-
-.form-textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-/* 动态添加项 */
-.dynamic-section {
-  margin-bottom: 20px;
-}
-
-.item-container {
-  margin-bottom: 15px;
-  padding: 15px;
-  background: var(--bg-light);
-  border-radius: 4px;
-  position: relative;
-  border: 1px solid var(--border-color);
-}
-
-.item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.item-title {
-  font-weight: 500;
-  color: var(--primary-dark);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.item-icon {
-  font-size: 16px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.btn-remove {
-  background: var(--danger);
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: opacity 0.3s;
-}
-
-.btn-remove:hover {
-  opacity: 0.8;
-}
-
-.btn-add {
-  background: var(--primary-dark);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
-  width: 100%;
-}
-
-.btn-add:hover {
-  background: #5a6275;
-}
-
-/* 折叠配置样式 */
-.collapsible-config {
-  background: var(--bg-light);
-  padding: 20px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-}
-
-.config-description {
-  margin-bottom: 20px;
-}
-
-.config-hint {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.config-controls {
-  margin-bottom: 20px;
-}
-
-.config-item {
-  margin-bottom: 12px;
-}
-
-.config-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.config-checkbox {
-  margin-right: 10px;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.config-text {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.config-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-config {
-  background: var(--primary-light);
-  color: var(--primary-dark);
-  border: 1px solid var(--border-color);
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.3s;
-  flex: 1;
-}
-
-.btn-config:hover {
-  background: var(--primary-dark);
-  color: white;
-}
-
-/* 右侧预览 */
-.preview-panel {
-  background: white;
-  overflow-y: auto;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-}
-
-.preview-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-light);
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  flex-shrink: 0;
-}
-
-.preview-title {
-  font-size: 18px;
-  color: var(--primary-dark);
-}
-
-.preview-buttons {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.btn-export {
-  background: var(--success);
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
-}
-
-.btn-export:hover {
-  background: #45a049;
-}
-
-.btn-clear {
-  background: var(--danger);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btn-clear:hover {
-  background: #d32f2f;
-}
-
-.preview-content {
-  padding: 20px;
-  flex-grow: 1;
-}
-
-/* 预览样式 */
-.report-container {
-  max-width: 800px;
-  margin: 0 auto;
-  background: white;
-}
-
-.report-header {
-  background: var(--primary-dark);
-  color: white;
-  padding: 40px;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-}
-
-.report-title {
-  font-size: 32px;
-  font-weight: 300;
-  margin-bottom: 10px;
-}
-
-.report-meta {
-  color: var(--primary-light);
-  font-size: 14px;
-}
-
-.report-stats {
-  background: var(--bg-light);
-  padding: 15px 40px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 30px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.stat-item {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.stat-value {
-  font-weight: 600;
-  color: var(--primary-dark);
-  font-size: 16px;
-}
-
-.report-section {
-  padding: 30px 40px;
-}
-
-.report-section-title {
-  font-size: 24px;
-  color: var(--primary-dark);
-  margin-bottom: 20px;
-  font-weight: 300;
-}
-
-.section-count {
-  font-size: 18px;
-  color: var(--primary-light);
-  font-weight: 400;
-  margin-left: 8px;
-}
-
-/* 折叠按钮样式 */
-.collapsible-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-}
-
-.collapse-btn {
-  background: none;
-  border: none;
-  font-size: 16px;
-  color: var(--primary-light);
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  transform: rotate(0deg);
-  margin-left: 10px;
-}
-
-.collapse-btn:hover {
-  background: var(--bg-light);
-  color: var(--primary-dark);
-}
-
-.collapse-btn.collapsed {
-  transform: rotate(-90deg);
-}
-
-.section-content {
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.output-card,
-.achievement-card,
-.plan-card {
-  background: var(--bg-light);
-  padding: 20px;
-  margin-bottom: 15px;
-  border-left: 3px solid var(--primary-dark);
-  border-radius: 4px;
-}
-
-.card-title {
-  font-size: 16px;
-  color: var(--primary-dark);
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-
-.card-content {
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.6;
-  white-space: pre-wrap; /* 保持换行 */
-}
-
-.report-footer {
-  background: var(--primary-dark);
-  color: var(--primary-light);
-  padding: 20px 40px;
-  text-align: center;
-  font-size: 13px;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-
 /* 滚动条样式 */
-.editor-panel::-webkit-scrollbar,
-.preview-panel::-webkit-scrollbar {
+.editor-panel::-webkit-scrollbar {
   width: 8px;
 }
 
-.editor-panel::-webkit-scrollbar-track,
-.preview-panel::-webkit-scrollbar-track {
+.editor-panel::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
 
-.editor-panel::-webkit-scrollbar-thumb,
-.preview-panel::-webkit-scrollbar-thumb {
+.editor-panel::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 4px;
 }
 
-.editor-panel::-webkit-scrollbar-thumb:hover,
-.preview-panel::-webkit-scrollbar-thumb:hover {
+.editor-panel::-webkit-scrollbar-thumb:hover {
   background: #aaa;
 }
 
@@ -1298,10 +173,6 @@ const clearAllData = (): void => {
     height: auto;
     max-height: 60vh;
     margin-bottom: 20px;
-  }
-
-  .preview-panel {
-    height: 70vh;
   }
 }
 </style>
