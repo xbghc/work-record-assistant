@@ -6,7 +6,15 @@
         <button class="btn-clear" @click="$emit('clear-data')" title="清除所有数据并重新开始">
           🗑️ 清除数据
         </button>
-        <button class="btn-export" @click="$emit('export-report')">导出HTML</button>
+        <div class="export-controls">
+          <select v-model="selectedFormat" class="format-select">
+            <option value="web">Web版本</option>
+            <option value="outlook">Outlook兼容版本</option>
+          </select>
+          <button class="btn-export" @click="$emit('export-report', selectedFormat)">
+            导出HTML
+          </button>
+        </div>
       </div>
     </div>
     <div class="preview-content" ref="previewContentRef">
@@ -139,13 +147,14 @@ interface Props {
 
 interface Emits {
   (e: 'clear-data'): void
-  (e: 'export-report'): void
+  (e: 'export-report', format: 'web' | 'outlook'): void
 }
 
 const props = defineProps<Props>()
 defineEmits<Emits>()
 
 const previewContentRef = ref<HTMLElement | null>(null)
+const selectedFormat = ref<'web' | 'outlook'>('web')
 
 // 计算属性，过滤掉完全为空的动态项，使预览更整洁
 const validOutputs = computed((): ReportItem[] =>
@@ -205,6 +214,29 @@ const isFormStarted = computed((): boolean => {
   align-items: center;
 }
 
+.export-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.format-select {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--primary-dark);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.format-select:hover,
+.format-select:focus {
+  border-color: var(--primary-dark);
+}
+
 .btn-export {
   background: var(--success);
   color: white;
@@ -239,14 +271,18 @@ const isFormStarted = computed((): boolean => {
 }
 
 .preview-content {
-  padding: 20px;
+  padding: 30px;
   flex-grow: 1;
+  overflow-y: auto;
 }
 
 .report-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   background: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .report-header {
@@ -322,5 +358,81 @@ const isFormStarted = computed((): boolean => {
   font-size: 13px;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .preview-content {
+    padding: 25px;
+  }
+
+  .report-container {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .preview-content {
+    padding: 20px;
+  }
+
+  .preview-controls {
+    padding: 15px;
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .preview-buttons {
+    justify-content: center;
+  }
+
+  .export-controls {
+    justify-content: center;
+  }
+
+  .report-header {
+    padding: 30px 20px;
+  }
+
+  .report-title {
+    font-size: 28px;
+  }
+
+  .report-stats {
+    padding: 15px 20px;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-content {
+    padding: 15px;
+  }
+
+  .report-header {
+    padding: 25px 15px;
+  }
+
+  .report-title {
+    font-size: 24px;
+  }
+
+  .report-stats {
+    padding: 15px;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .preview-controls {
+    padding: 12px;
+  }
+
+  .format-select,
+  .btn-export,
+  .btn-clear {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
 }
 </style>

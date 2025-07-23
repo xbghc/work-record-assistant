@@ -125,14 +125,19 @@ const clearAllData = (): void => {
   display: flex;
   flex-direction: column;
   background: var(--bg-light);
+  align-items: center;
 }
 
 .main-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
+  gap: 20px;
   flex: 1;
   overflow: hidden;
+  width: 100%;
+  max-width: 1400px;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 /* 左侧编辑器 */
@@ -162,17 +167,37 @@ const clearAllData = (): void => {
   background: #aaa;
 }
 
-/* 响应式 */
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .main-layout {
+    max-width: 100%;
+    padding: 15px;
+    gap: 15px;
+  }
+}
+
 @media (max-width: 1024px) {
   .main-layout {
     grid-template-columns: 1fr;
     height: auto;
+    padding: 10px;
+    gap: 20px;
   }
 
   .editor-panel {
     height: auto;
     max-height: 60vh;
-    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-container {
+    align-items: stretch;
+  }
+
+  .main-layout {
+    padding: 10px;
+    gap: 15px;
   }
 }
 </style>
