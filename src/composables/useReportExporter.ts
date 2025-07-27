@@ -1,55 +1,48 @@
-import { computed, type ComputedRef } from 'vue'
+import { computed, type ComputedRef, type Ref } from 'vue'
 import type { ReportData, ReportItem, PlanItem } from '@/types/report'
+import { generateModernExportStyles, generateOutlookStyles } from '@/styles/reportStyles'
 
 export const useReportExporter = (
-  reportData: ReportData,
+  reportData: Ref<ReportData>,
   formattedDateRange: ComputedRef<string>,
 ) => {
-  // 基础样式变量
-  const colors = {
-    primaryDark: '#383e4e',
-    primaryLight: '#b6bac5',
-    bgLight: '#f8f9fa',
-    textSecondary: '#6c7380',
-    borderColor: '#e5e7eb',
-  }
-
   // 计算属性，过滤掉完全为空的动态项
   const validOutputs = computed((): ReportItem[] =>
-    reportData.outputs.filter((item: ReportItem) => item.title || item.content),
+    reportData.value.outputs.filter((item: ReportItem) => item.title || item.content),
   )
 
   const validAchievements = computed((): ReportItem[] =>
-    reportData.achievements.filter((item: ReportItem) => item.title || item.content),
+    reportData.value.achievements.filter((item: ReportItem) => item.title || item.content),
   )
 
   const validPlans = computed((): PlanItem[] =>
-    reportData.plans.filter((item: PlanItem) => item.title || item.content || item.time),
+    reportData.value.plans.filter((item: PlanItem) => item.title || item.content || item.time),
   )
 
   // 生成Outlook兼容的HTML结构
   const generateOutlookCompatibleHTML = (): string => {
-    const data = reportData
+    const data = reportData.value
     const outputs = validOutputs.value
     const achievements = validAchievements.value
     const plans = validPlans.value
 
-    // Outlook兼容的表格样式
-    const outerTableStyle =
-      'width: 100%; border-collapse: collapse; margin: 0; padding: 0; font-family: Arial, sans-serif;'
-    const innerTableStyle =
-      'width: 800px; border-collapse: collapse; margin: 0; padding: 0; font-family: Arial, sans-serif;'
-    const cellStyle = 'padding: 15px; vertical-align: top; border: 0;'
-    const centerCellStyle = 'text-align: center; vertical-align: top; padding: 20px;'
-    const contentWrapperStyle = 'text-align: left;' // 重置内容为左对齐
-    const headerStyle =
-      'background-color: #383e4e; color: #ffffff; padding: 30px; text-align: left;'
-    const sectionHeaderStyle =
-      'background-color: #f8f9fa; padding: 20px; font-size: 18px; font-weight: bold; color: #383e4e; border-bottom: 3px solid #383e4e; text-align: left;'
-    const contentStyle =
-      'background-color: #ffffff; padding: 20px; color: #6c7380; line-height: 1.6; text-align: left;'
-    const footerStyle =
-      'background-color: #383e4e; color: #b6bac5; padding: 20px; text-align: center; font-size: 13px;'
+    // 使用统一的Outlook样式配置
+    const outlookStyles = generateOutlookStyles()
+    const {
+      outerTableStyle,
+      innerTableStyle,
+      centerCellStyle,
+      contentWrapperStyle,
+      headerStyle,
+      titleStyle,
+      metaStyle,
+      sectionHeaderStyle,
+      contentStyle,
+      cellStyle,
+      itemTitleStyle,
+      itemContentStyle,
+      footerStyle,
+    } = outlookStyles
 
     // 生成工作项目HTML（表格布局）
     const generateOutlookItemsHTML = (
@@ -86,8 +79,8 @@ export const useReportExporter = (
                 <table style="${innerTableStyle}" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="padding: 0; margin: 0; text-align: left;">
-                      <div style="font-size: 16px; font-weight: bold; color: #383e4e; margin-bottom: 8px; text-align: left;">${titleContent}</div>
-                      <div style="font-size: 14px; color: #6c7380; line-height: 1.6; text-align: left;">${contentHTML}</div>
+                      <div style="${itemTitleStyle}">${titleContent}</div>
+                      <div style="${itemContentStyle}">${contentHTML}</div>
                     </td>
                   </tr>
                 </table>
@@ -168,8 +161,8 @@ export const useReportExporter = (
                     <!-- 报告头部 -->
                     <tr>
                       <td style="${headerStyle}">
-                        <div style="font-size: 28px; font-weight: normal; margin-bottom: 8px; margin-top: 0;">${data.reportTitle || '报告标题'}</div>
-                        <div style="color: #b6bac5; font-size: 14px;">${data.name || '姓名'} · ${data.department || '部门'} · ${formattedDateRange.value}</div>
+                        <div style="${titleStyle}">${data.reportTitle || '报告标题'}</div>
+                        <div style="${metaStyle}">${data.name || '姓名'} · ${data.department || '部门'} · ${formattedDateRange.value}</div>
                       </td>
                     </tr>
 
@@ -199,10 +192,14 @@ export const useReportExporter = (
 
   // 生成Web版本的折叠HTML结构
   const generateWebHTML = (): string => {
-    const data = reportData
+    const data = reportData.value
     const outputs = validOutputs.value
     const achievements = validAchievements.value
     const plans = validPlans.value
+
+    // 使用统一的现代版本样式配置
+    const modernStyles = generateModernExportStyles()
+    const { colors } = modernStyles
 
     // 生成邮件兼容的折叠HTML结构
     const generateCollapsibleSection = (
@@ -393,7 +390,7 @@ export const useReportExporter = (
 
   // 导出报告为 HTML 文件
   const exportReport = (format: 'web' | 'outlook' = 'web'): void => {
-    const data = reportData
+    const data = reportData.value
 
     let reportHTML: string
     let filenameSuffix: string
@@ -436,10 +433,178 @@ export const useReportExporter = (
     URL.revokeObjectURL(link.href)
   }
 
+  // 生成Outlook HTML用于预览
+  const generateOutlookHTML = (
+    data: ReportData,
+    outputs: ReportItem[],
+    achievements: ReportItem[],
+    plans: PlanItem[],
+    formattedDateRange: string,
+  ): string => {
+    // 使用统一的Outlook样式配置
+    const outlookStyles = generateOutlookStyles()
+    const {
+      outerTableStyle,
+      innerTableStyle,
+      centerCellStyle,
+      contentWrapperStyle,
+      headerStyle,
+      titleStyle,
+      metaStyle,
+      sectionHeaderStyle,
+      contentStyle,
+      cellStyle,
+      itemTitleStyle,
+      itemContentStyle,
+      footerStyle,
+    } = outlookStyles
+
+    // 生成工作项目HTML（表格布局）
+    const generateItemsHTML = (
+      items: (ReportItem | PlanItem)[],
+      type: 'outputs' | 'achievements' | 'plans',
+    ): string => {
+      return items
+        .map((item) => {
+          const titleContent =
+            type === 'plans' && 'time' in item && item.time
+              ? `${item.time} - ${item.title || '未命名计划'}`
+              : type === 'achievements' && 'title' in item
+                ? `💡 ${item.title || '未命名个人收获'}`
+                : item.title || '未命名工作'
+
+          const contentHTML =
+            item.content && item.content.includes('\n')
+              ? item.content
+                  .split('\n')
+                  .filter((line) => line.trim())
+                  .map((line) => `• ${line}`)
+                  .join('<br/>')
+              : item.content || '暂无描述'
+
+          return `
+          <table style="${innerTableStyle}" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="${cellStyle} background-color: #f8f9fa; border-left: 3px solid #383e4e; text-align: left;">
+                <table style="${innerTableStyle}" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding: 0; margin: 0; text-align: left;">
+                      <div style="${itemTitleStyle}">${titleContent}</div>
+                      <div style="${itemContentStyle}">${contentHTML}</div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr><td style="height: 10px; line-height: 1px; font-size: 1px;">&nbsp;</td></tr>
+          </table>
+        `
+        })
+        .join('')
+    }
+
+    // 生成统计信息
+    const statsHTML = `
+      <table style="${innerTableStyle}" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="${cellStyle} background-color: #f8f9fa; border-bottom: 1px solid #e5e7eb; text-align: left;">
+            <table style="${innerTableStyle}" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding: 0; width: 50%; text-align: left;">
+                  <span style="font-size: 13px; color: #6c7380;">Bug/需求单: </span>
+                  <span style="font-weight: bold; color: #383e4e; font-size: 16px;">${data.tasksCompleted}</span>
+                </td>
+                <td style="padding: 0; width: 50%; text-align: left;">
+                  <span style="font-size: 13px; color: #6c7380;">MR合并: </span>
+                  <span style="font-weight: bold; color: #383e4e; font-size: 16px;">${data.commits}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `
+
+    // 生成各个章节
+    const outputsHTML =
+      outputs.length > 0
+        ? `
+      <table style="${innerTableStyle}" cellpadding="0" cellspacing="0">
+        <tr><td style="${sectionHeaderStyle}">01 本周工作 (${outputs.length})</td></tr>
+        <tr><td style="${contentStyle}">${generateItemsHTML(outputs, 'outputs')}</td></tr>
+      </table>
+    `
+        : ''
+
+    const achievementsHTML =
+      achievements.length > 0
+        ? `
+      <table style="${innerTableStyle}" cellpadding="0" cellspacing="0">
+        <tr><td style="${sectionHeaderStyle}">02 个人收获 (${achievements.length})</td></tr>
+        <tr><td style="${contentStyle}">${generateItemsHTML(achievements, 'achievements')}</td></tr>
+      </table>
+    `
+        : ''
+
+    const plansHTML =
+      plans.length > 0
+        ? `
+      <table style="${innerTableStyle}" cellpadding="0" cellspacing="0">
+        <tr><td style="${sectionHeaderStyle}">03 下周计划</td></tr>
+        <tr><td style="${contentStyle}">${generateItemsHTML(plans, 'plans')}</td></tr>
+      </table>
+    `
+        : ''
+
+    // 完整的Outlook兼容HTML
+    return `
+      <!-- 外层table用于居中 -->
+      <table style="${outerTableStyle} background-color: #ffffff;" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="${centerCellStyle}">
+            <!-- 内层table控制宽度 -->
+            <table style="${innerTableStyle} background-color: #ffffff; border: 2px solid #e5e7eb;" cellpadding="0" cellspacing="0">
+              <!-- 内容wrapper重置文字对齐 -->
+              <tr>
+                <td style="${contentWrapperStyle}">
+                  <table style="${innerTableStyle}" cellpadding="0" cellspacing="0">
+                    <!-- 报告头部 -->
+                    <tr>
+                      <td style="${headerStyle}">
+                        <div style="${titleStyle}">${data.reportTitle || '报告标题'}</div>
+                        <div style="${metaStyle}">${data.name || '姓名'} · ${data.department || '部门'} · ${formattedDateRange}</div>
+                      </td>
+                    </tr>
+
+                    <!-- 统计区域 -->
+                    <tr><td>${statsHTML}</td></tr>
+
+                    <!-- 各个章节 -->
+                    ${outputsHTML ? `<tr><td>${outputsHTML}</td></tr>` : ''}
+                    ${achievementsHTML ? `<tr><td>${achievementsHTML}</td></tr>` : ''}
+                    ${plansHTML ? `<tr><td>${plansHTML}</td></tr>` : ''}
+
+                    <!-- 报告底部 -->
+                    <tr>
+                      <td style="${footerStyle}">
+                        ${data.name || '姓名'} · ${data.department || '部门'} · ${new Date().toISOString().split('T')[0]}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `
+  }
+
   return {
     validOutputs,
     validAchievements,
     validPlans,
     exportReport,
+    generateOutlookHTML,
   }
 }

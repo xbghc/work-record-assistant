@@ -7,13 +7,13 @@ import { RouterView } from 'vue-router'
     <nav class="app-nav">
       <div class="nav-container">
         <div class="nav-brand">
-          <h1 class="brand-title">周报生成器</h1>
-          <span class="brand-subtitle">Weekly Report Generator</span>
+          <h1 class="brand-title">工作记录编写助手</h1>
+          <span class="brand-subtitle">Work Record Assistant</span>
         </div>
         <div class="nav-links">
           <RouterLink to="/" class="nav-link">
             <span class="nav-icon">📝</span>
-            周报生成
+            记录编写
           </RouterLink>
           <RouterLink to="/about" class="nav-link">
             <span class="nav-icon">ℹ️</span>

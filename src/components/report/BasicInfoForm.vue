@@ -8,7 +8,7 @@
         class="form-input"
         :value="modelValue.reportTitle"
         @input="updateField('reportTitle', ($event.target as HTMLInputElement).value)"
-        placeholder="请输入报告标题（如：工作周报、月度总结等）"
+        placeholder="请输入报告标题（如：工作记录、周报总结、项目汇报等）"
         required
       />
     </div>

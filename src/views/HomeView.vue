@@ -38,7 +38,6 @@
         :report-data="reportData"
         :formatted-date-range="formattedDateRange"
         @clear-data="clearAllData"
-        @export-report="exportReport"
       />
     </div>
   </div>
@@ -48,7 +47,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import type { ReportData, ReportItem, PlanItem, ItemType } from '@/types/report'
 import { useLocalStorage, getDefaultReportData } from '@/composables/useLocalStorage'
-import { useReportExporter } from '@/composables/useReportExporter'
+
 import BasicInfoForm from '@/components/report/BasicInfoForm.vue'
 import CollapsibleConfig from '@/components/report/CollapsibleConfig.vue'
 import DynamicItemList from '@/components/report/DynamicItemList.vue'
@@ -94,8 +93,7 @@ const formattedDateRange = computed((): string => {
   return `${formatDate(startDate)} - ${formatDate(endDate)}`
 })
 
-// 报告导出功能
-const { exportReport } = useReportExporter(reportData.value, formattedDateRange)
+// 导出功能现在由ReportPreview组件内部处理
 
 // 更新动态项列表
 const updateItems = (type: ItemType, items: (ReportItem | PlanItem)[]) => {
