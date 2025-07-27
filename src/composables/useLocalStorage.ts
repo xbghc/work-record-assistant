@@ -4,7 +4,7 @@ const STORAGE_KEY = 'weekly-report-data'
 
 // 默认数据结构
 export const getDefaultReportData = (): ReportData => ({
-  reportTitle: '工作周报',
+  reportTitle: '工作记录',
   name: '',
   department: '',
   startDate: '',
@@ -42,7 +42,7 @@ export const useLocalStorage = () => {
 
   // 迁移旧数据格式，为items添加collapsible属性
   const migrateItemsData = (items: (ReportItem | PlanItem)[]): (ReportItem | PlanItem)[] => {
-    return items.map(item => ({
+    return items.map((item) => ({
       ...item,
       collapsible: item.collapsible ?? false, // 如果没有collapsible属性，默认为false
     }))

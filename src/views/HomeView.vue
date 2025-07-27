@@ -38,7 +38,6 @@
         :report-data="reportData"
         :formatted-date-range="formattedDateRange"
         @clear-data="clearAllData"
-        @export-report="exportReport"
       />
     </div>
   </div>
@@ -48,7 +47,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import type { ReportData, ReportItem, PlanItem, ItemType } from '@/types/report'
 import { useLocalStorage, getDefaultReportData } from '@/composables/useLocalStorage'
-import { useReportExporter } from '@/composables/useReportExporter'
+
 import BasicInfoForm from '@/components/report/BasicInfoForm.vue'
 import CollapsibleConfig from '@/components/report/CollapsibleConfig.vue'
 import DynamicItemList from '@/components/report/DynamicItemList.vue'
@@ -94,8 +93,7 @@ const formattedDateRange = computed((): string => {
   return `${formatDate(startDate)} - ${formatDate(endDate)}`
 })
 
-// 报告导出功能
-const { exportReport } = useReportExporter(reportData.value, formattedDateRange)
+// 导出功能现在由ReportPreview组件内部处理
 
 // 更新动态项列表
 const updateItems = (type: ItemType, items: (ReportItem | PlanItem)[]) => {
@@ -125,14 +123,19 @@ const clearAllData = (): void => {
   display: flex;
   flex-direction: column;
   background: var(--bg-light);
+  align-items: center;
 }
 
 .main-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
+  gap: 20px;
   flex: 1;
   overflow: hidden;
+  width: 100%;
+  max-width: 1400px;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 /* 左侧编辑器 */
@@ -162,17 +165,37 @@ const clearAllData = (): void => {
   background: #aaa;
 }
 
-/* 响应式 */
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .main-layout {
+    max-width: 100%;
+    padding: 15px;
+    gap: 15px;
+  }
+}
+
 @media (max-width: 1024px) {
   .main-layout {
     grid-template-columns: 1fr;
     height: auto;
+    padding: 10px;
+    gap: 20px;
   }
 
   .editor-panel {
     height: auto;
     max-height: 60vh;
-    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-container {
+    align-items: stretch;
+  }
+
+  .main-layout {
+    padding: 10px;
+    gap: 15px;
   }
 }
 </style>

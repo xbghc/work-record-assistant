@@ -2,11 +2,21 @@
   <div class="preview-panel">
     <div class="preview-controls">
       <h3 class="preview-title">实时预览</h3>
+
       <div class="preview-buttons">
         <button class="btn-clear" @click="$emit('clear-data')" title="清除所有数据并重新开始">
           🗑️ 清除数据
         </button>
-        <button class="btn-export" @click="$emit('export-report')">导出HTML</button>
+        <div class="export-controls">
+          <select v-model="selectedFormat" class="format-select">
+            <option value="pdf">打印PDF</option>
+            <option value="browser-html">浏览器HTML (完整文档)</option>
+            <option value="email-html">邮件HTML (内联样式)</option>
+          </select>
+          <button class="btn-export" @click="handleExport">
+            {{ getExportButtonText() }}
+          </button>
+        </div>
       </div>
     </div>
     <div class="preview-content" ref="previewContentRef">
@@ -14,6 +24,8 @@
         <p style="font-size: 18px; margin-bottom: 10px">请填写左侧表单</p>
         <p style="font-size: 14px">预览内容将实时显示在这里</p>
       </div>
+
+      <!-- 现代预览 -->
       <div v-else class="report-container">
         <div class="report-header">
           <h1 class="report-title">{{ reportData.reportTitle || '报告标题' }}</h1>
@@ -72,26 +84,33 @@
           :collapsible="reportData.collapsible.achievements"
           :item-count="validAchievements.length"
         >
-          <div
-            style="
-              display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-              gap: 15px;
-            "
+          <CollapsibleItem
+            v-for="achievement in validAchievements"
+            :key="achievement.id"
+            :item="achievement"
+            card-class="achievement-card"
+            default-title="未命名个人收获"
           >
-            <CollapsibleItem
-              v-for="(achievement, index) in validAchievements"
-              :key="achievement.id"
-              :item="achievement"
-              card-class="achievement-card"
-              default-title="未命名个人收获"
-            >
-              <template #title>
-                {{ ['💡', '🤝', '📊', '🎯'][index % 4] }}
-                {{ achievement.title || '未命名个人收获' }}
-              </template>
-            </CollapsibleItem>
-          </div>
+            <template #title>💡 {{ achievement.title || '未命名个人收获' }}</template>
+            <template #content>
+              <ul
+                v-if="
+                  achievement.content &&
+                  achievement.content.split('\n').filter((line) => line.trim()).length > 1
+                "
+                style="margin: 0; padding-left: 20px"
+              >
+                <li
+                  v-for="(line, i) in achievement.content.split('\n').filter((l) => l.trim())"
+                  :key="i"
+                  style="margin-bottom: 5px"
+                >
+                  {{ line }}
+                </li>
+              </ul>
+              <p v-else>{{ achievement.content || '暂无描述' }}</p>
+            </template>
+          </CollapsibleItem>
         </ReportSection>
 
         <ReportSection
@@ -129,6 +148,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { ReportData, ReportItem, PlanItem } from '@/types/report'
+import { usePDFGenerator } from '@/composables/usePDFGenerator'
 import ReportSection from './ReportSection.vue'
 import CollapsibleItem from './CollapsibleItem.vue'
 
@@ -139,13 +159,58 @@ interface Props {
 
 interface Emits {
   (e: 'clear-data'): void
-  (e: 'export-report'): void
+  (e: 'export-report', format: 'web' | 'outlook'): void
 }
 
 const props = defineProps<Props>()
 defineEmits<Emits>()
 
 const previewContentRef = ref<HTMLElement | null>(null)
+const selectedFormat = ref<'pdf' | 'browser-html' | 'email-html'>('pdf')
+
+// 获取PDF生成函数
+const formattedDateRangeComputed = computed(() => props.formattedDateRange)
+const reportDataRef = computed(() => props.reportData)
+const { generatePDF, downloadBrowserHTML, downloadEmailHTML } = usePDFGenerator(
+  reportDataRef,
+  formattedDateRangeComputed,
+)
+
+// 处理导出
+const handleExport = async () => {
+  try {
+    switch (selectedFormat.value) {
+      case 'pdf':
+        await generatePDF()
+        break
+      case 'browser-html':
+        downloadBrowserHTML()
+        break
+      case 'email-html':
+        downloadEmailHTML()
+        break
+      default:
+        await generatePDF()
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    alert('导出失败，请重试')
+  }
+}
+
+// 获取导出按钮文字
+const getExportButtonText = () => {
+  switch (selectedFormat.value) {
+    case 'pdf':
+      return '打印PDF'
+    case 'browser-html':
+      return '下载浏览器版'
+    case 'email-html':
+      return '下载邮件版'
+    default:
+      return '打印PDF'
+  }
+}
 
 // 计算属性，过滤掉完全为空的动态项，使预览更整洁
 const validOutputs = computed((): ReportItem[] =>
@@ -205,6 +270,29 @@ const isFormStarted = computed((): boolean => {
   align-items: center;
 }
 
+.export-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.format-select {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--primary-dark);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.format-select:hover,
+.format-select:focus {
+  border-color: var(--primary-dark);
+}
+
 .btn-export {
   background: var(--success);
   color: white;
@@ -239,14 +327,18 @@ const isFormStarted = computed((): boolean => {
 }
 
 .preview-content {
-  padding: 20px;
+  padding: 30px;
   flex-grow: 1;
+  overflow-y: auto;
 }
 
 .report-container {
   max-width: 800px;
   margin: 0 auto;
   background: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .report-header {
@@ -322,5 +414,91 @@ const isFormStarted = computed((): boolean => {
   font-size: 13px;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .preview-content {
+    padding: 25px;
+  }
+
+  .report-container {
+    max-width: 100%;
+  }
+
+  .preview-mode-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .mode-selector {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .preview-content {
+    padding: 20px;
+  }
+
+  .preview-controls {
+    padding: 15px;
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .preview-buttons {
+    justify-content: center;
+  }
+
+  .export-controls {
+    justify-content: center;
+  }
+
+  .report-header {
+    padding: 30px 20px;
+  }
+
+  .report-title {
+    font-size: 28px;
+  }
+
+  .report-stats {
+    padding: 15px 20px;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-content {
+    padding: 15px;
+  }
+
+  .report-header {
+    padding: 25px 15px;
+  }
+
+  .report-title {
+    font-size: 24px;
+  }
+
+  .report-stats {
+    padding: 15px;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .preview-controls {
+    padding: 12px;
+  }
+
+  .format-select,
+  .btn-export,
+  .btn-clear {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
 }
 </style>
